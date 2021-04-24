@@ -4,6 +4,7 @@ import scapy.all as scapy
 def process_packet(packet):
     scapy_packet = scapy.IP(packet.get_payload())  # This will convert the packet payload to scapy packet
     if scapy_packet.haslayer(scapy.Raw):
+        print(scapy_packet.show())
         if scapy_packet[scapy.TCP].dport == 80:
             print("HTTP Request")
             if ".exe" in scapy_packet[scapy.Raw].load:
